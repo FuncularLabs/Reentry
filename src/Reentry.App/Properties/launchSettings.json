@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Reentry": {
+      "commandName": "Project"
+    },
+    "Reentry (autostart)": {
+      "commandName": "Project",
+      "commandLineArgs": "/autostart"
+    }
+  }
+}

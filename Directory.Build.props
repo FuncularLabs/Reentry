@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Version>0.1.0-alpha1</Version>
+    <Company>Funcular Labs</Company>
+    <Authors>Funcular Labs</Authors>
+    <Copyright>© 2026 Funcular Labs</Copyright>
+    <Product>Reentry</Product>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+</Project>

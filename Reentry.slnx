@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Reentry.App/Reentry.App.csproj" />
+  </Folder>
+</Solution>
