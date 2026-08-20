@@ -19,18 +19,26 @@ public sealed class TrayIconHost : IDisposable
 
     public void Show()
     {
-        var menu = new MenuFlyout();
-        menu.Items.Add(Item("Show progress", _showHud));
-        menu.Items.Add(Item("Settings", _showSettings));
-        menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(Item("Exit", _exit));
-
-        _icon = new TaskbarIcon
+        try
         {
-            ToolTipText = "Reentry",
-            ContextFlyout = menu,
-        };
-        _icon.ForceCreate();
+            var menu = new MenuFlyout();
+            menu.Items.Add(Item("Show progress", _showHud));
+            menu.Items.Add(Item("Settings", _showSettings));
+            menu.Items.Add(new MenuFlyoutSeparator());
+            menu.Items.Add(Item("Exit", _exit));
+
+            _icon = new TaskbarIcon
+            {
+                ToolTipText = "Reentry",
+                ContextFlyout = menu,
+                IconSource = new GeneratedIconSource { Text = "R" },
+            };
+            _icon.ForceCreate();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
     }
 
     private static MenuFlyoutItem Item(string text, Action action)

@@ -1,6 +1,6 @@
 # Publishes Reentry as a framework-dependent Windows app into .\publish\.
 # Requires the .NET 10 Desktop Runtime on the target machine.
-# The Windows App SDK runtime is bundled (WindowsAppSDKSelfContained=true).
+# Requires the Windows App SDK 2.4 runtime (WindowsAppSDKSelfContained=false; the self-contained 2.4 CoreMessagingXP payload fail-fasts on Windows 11 25H2).
 #
 # Usage: pwsh ./publish.ps1                 (framework-dependent .NET, small)
 #        pwsh ./publish.ps1 -SelfContained  (bundles the .NET runtime, large but portable)
