@@ -14,9 +14,6 @@ QueryFullProcessImageNameW
 OpenProcess
 CloseHandle
 GetCurrentProcessId
-SetWindowLongPtr
-GetWindowLongPtr
-CallWindowProc
 SetWindowSubclass
 RemoveWindowSubclass
 DefSubclassProc
