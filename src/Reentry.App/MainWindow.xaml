@@ -5,52 +5,15 @@
     xmlns:vm="using:Reentry.App.ViewModels"
     Title="Reentry">
 
-    <Window.Resources>
-        <Style x:Key="HudRowItem" TargetType="ListViewItem">
-            <Setter Property="MinHeight" Value="26"/>
-            <Setter Property="Padding" Value="6,1"/>
-            <Setter Property="Margin" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-        </Style>
-        <DataTemplate x:Key="TrackedRow" x:DataType="vm:TrackedAppRow">
-            <Grid ColumnSpacing="8" MinHeight="22">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{x:Bind Name, Mode=OneWay}"
-                           TextTrimming="CharacterEllipsis"
-                           VerticalAlignment="Center"/>
-                <Border Grid.Column="1"
-                        Background="#332DB4A0"
-                        Padding="5,1"
-                        CornerRadius="3"
-                        Visibility="{x:Bind ManagedVisibility, Mode=OneWay}"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="managed" FontSize="10" Opacity="0.9"/>
-                </Border>
-                <TextBlock Grid.Column="2"
-                           Text="{x:Bind Source, Mode=OneWay}"
-                           Opacity="0.6"
-                           FontSize="12"
-                           VerticalAlignment="Center"/>
-                <Border Grid.Column="3"
-                        Background="{x:Bind StateBrush, Mode=OneWay}"
-                        Padding="6,1"
-                        CornerRadius="3"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="{x:Bind State, Mode=OneWay}"
-                               Foreground="{x:Bind ChipForeground, Mode=OneWay}"
-                               FontSize="11"
-                               FontWeight="SemiBold"/>
-                </Border>
-            </Grid>
-        </DataTemplate>
-    </Window.Resources>
-
     <Grid Padding="16" RowSpacing="8">
+        <Grid.Resources>
+            <Style x:Key="HudRowItem" TargetType="ListViewItem">
+                <Setter Property="MinHeight" Value="26"/>
+                <Setter Property="Padding" Value="6,1"/>
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -86,27 +49,99 @@
         <TextBlock Grid.Row="2" Text="Session restore (inferred)" FontWeight="SemiBold" Margin="0,4,0,0"/>
         <ListView Grid.Row="3"
                   ItemsSource="{x:Bind ViewModel.RestoreRows, Mode=OneWay}"
-                  ItemTemplate="{StaticResource TrackedRow}"
                   ItemContainerStyle="{StaticResource HudRowItem}"
                   SelectionMode="None"
-                  IsItemClickEnabled="False"
-                  ShowsScrollingPlaceholders="False">
+                  IsItemClickEnabled="False">
             <ListView.ItemContainerTransitions>
                 <TransitionCollection/>
             </ListView.ItemContainerTransitions>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="vm:TrackedAppRow">
+                    <Grid ColumnSpacing="8" MinHeight="22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"/>
+                        <Border Grid.Column="1"
+                                Background="#332DB4A0"
+                                Padding="5,1"
+                                CornerRadius="3"
+                                Visibility="{x:Bind ManagedVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="managed" FontSize="10" Opacity="0.9"/>
+                        </Border>
+                        <TextBlock Grid.Column="2"
+                                   Text="{x:Bind Source, Mode=OneWay}"
+                                   Opacity="0.6"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+                        <Border Grid.Column="3"
+                                Background="{x:Bind StateBrush, Mode=OneWay}"
+                                Padding="6,1"
+                                CornerRadius="3"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind State, Mode=OneWay}"
+                                       Foreground="{x:Bind ChipForeground, Mode=OneWay}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
         </ListView>
 
         <TextBlock Grid.Row="4" Text="Startup apps" FontWeight="SemiBold" Margin="0,4,0,0"/>
         <ListView Grid.Row="5"
                   ItemsSource="{x:Bind ViewModel.StartupRows, Mode=OneWay}"
-                  ItemTemplate="{StaticResource TrackedRow}"
                   ItemContainerStyle="{StaticResource HudRowItem}"
                   SelectionMode="None"
-                  IsItemClickEnabled="False"
-                  ShowsScrollingPlaceholders="False">
+                  IsItemClickEnabled="False">
             <ListView.ItemContainerTransitions>
                 <TransitionCollection/>
             </ListView.ItemContainerTransitions>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="vm:TrackedAppRow">
+                    <Grid ColumnSpacing="8" MinHeight="22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"/>
+                        <Border Grid.Column="1"
+                                Background="#332DB4A0"
+                                Padding="5,1"
+                                CornerRadius="3"
+                                Visibility="{x:Bind ManagedVisibility, Mode=OneWay}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="managed" FontSize="10" Opacity="0.9"/>
+                        </Border>
+                        <TextBlock Grid.Column="2"
+                                   Text="{x:Bind Source, Mode=OneWay}"
+                                   Opacity="0.6"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+                        <Border Grid.Column="3"
+                                Background="{x:Bind StateBrush, Mode=OneWay}"
+                                Padding="6,1"
+                                CornerRadius="3"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind State, Mode=OneWay}"
+                                       Foreground="{x:Bind ChipForeground, Mode=OneWay}"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
         </ListView>
 
         <Grid Grid.Row="6">
