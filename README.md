@@ -62,8 +62,7 @@ pwsh ./publish.ps1 -SelfContained  # bundles the .NET runtime (portable, larger)
 
 → `publish/Reentry.exe`
 
-The Windows App SDK runtime is bundled (`WindowsAppSDKSelfContained=true`); the
-app is unpackaged (`WindowsPackageType=None`).
+The app is unpackaged (`WindowsPackageType=None`) and uses the installed Windows App SDK 2.4 runtime (`WindowsAppSDKSelfContained=false`). The self-contained 2.4 CoreMessagingXP payload fail-fasts on Windows 11 25H2.
 
 ---
 

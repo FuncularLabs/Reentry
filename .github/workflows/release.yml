@@ -184,6 +184,7 @@ jobs:
             '## Requirements'
             ''
             '- **Windows 10/11 (x64)**'
+            '- **Windows App SDK 2.4** runtime'
             '- **.NET 10 Desktop Runtime** — https://dotnet.microsoft.com/download/dotnet/10.0'
             ''
             '## Notes'

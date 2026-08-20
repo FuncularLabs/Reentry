@@ -5,6 +5,8 @@ All notable changes to Reentry are documented here. The format follows
 
 ## [Unreleased]
 
+- Launch on Windows 11 25H2: use the installed WASDK 2.4 runtime instead of the self-contained CoreMessagingXP payload (0xC0000602). Give the tray icon a generated glyph so ForceCreate has an IconSource.
+
 ## [0.1.0-alpha1] - 2026-08-20
 
 First scaffold — a Windows startup / session-restore monitor.
