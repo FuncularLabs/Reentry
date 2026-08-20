@@ -20,6 +20,9 @@
     <ApplicationIcon>Assets\reentry.ico</ApplicationIcon>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- WASDK self-contained rejects AnyCPU unless a RID is set. `dotnet build`
+         defaults Platform to AnyCPU; win-x64 matches publish.ps1 / release. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and ('$(Platform)' == '' or '$(Platform)' == 'AnyCPU')">win-x64</RuntimeIdentifier>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

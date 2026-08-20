@@ -20,7 +20,7 @@ public sealed unsafe class Win32ProcessProbe : IProcessProbe
                 try { started = process.StartTime.ToUniversalTime(); }
                 catch { started = DateTimeOffset.UtcNow; }
 
-                list.Add(new LiveProcess(process.Id, exe, commandLine: null, started));
+                list.Add(new LiveProcess(process.Id, exe, CommandLine: null, StartedUtc: started));
             }
             catch
             {
@@ -44,10 +44,10 @@ public sealed unsafe class Win32ProcessProbe : IProcessProbe
                 return true;
 
             uint pid = 0;
-            _ = PInvoke.GetWindowThreadProcessId(hwnd, &pid);
+            PInvoke.GetWindowThreadProcessId(hwnd, &pid);
             var title = ReadTitle(hwnd);
             var exe = QueryImage((int)pid) ?? "";
-            list.Add(new LiveWindow(hwnd.Value, (int)pid, title, exe, IsVisible: true));
+            list.Add(new LiveWindow((long)hwnd.Value, (int)pid, title, exe, IsVisible: true));
             return true;
         }, 0);
         return list;
