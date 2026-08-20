@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Reentry.Core;
 using Reentry.Core.Models;
 
 namespace Reentry.App.ViewModels;
@@ -10,6 +11,10 @@ public sealed partial class HudViewModel : ObservableObject
     [ObservableProperty] private string _bootDetail = "";
     [ObservableProperty] private string _footerElapsed = "00:00";
     [ObservableProperty] private DateTimeOffset _sessionStartedUtc = DateTimeOffset.UtcNow;
+    [ObservableProperty] private int _settledCount;
+    [ObservableProperty] private int _totalCount;
+    [ObservableProperty] private double _settledFraction;
+    [ObservableProperty] private string _settledSummary = "0 / 0 settled";
 
     public HudViewModel(BootKind bootKind)
     {
@@ -30,25 +35,23 @@ public sealed partial class HudViewModel : ObservableObject
         var startup = apps.Where(a => a.Source is not AppSource.Arr and not AppSource.Explorer).ToList();
         Sync(RestoreRows, restore);
         Sync(StartupRows, startup);
+
+        TotalCount = apps.Count;
+        SettledCount = apps.Count(a => a.State.IsSettled());
+        SettledFraction = TotalCount == 0 ? 0 : (double)SettledCount / TotalCount;
+        SettledSummary = $"{SettledCount} / {TotalCount} settled";
         FooterElapsed = Format(DateTimeOffset.UtcNow - SessionStartedUtc);
     }
 
     private static void Sync(ObservableCollection<TrackedAppRow> target, List<TrackedApp> source)
     {
-        var byId = target.ToDictionary(r => r.Id);
-        target.Clear();
-        foreach (var app in source)
-        {
-            if (byId.TryGetValue(app.Id, out var existing))
-            {
-                existing.Apply(app);
-                target.Add(existing);
-            }
-            else
-            {
-                target.Add(TrackedAppRow.From(app));
-            }
-        }
+        CollectionSync.InPlace(
+            target,
+            source,
+            itemKey: r => r.Id,
+            sourceKey: a => a.Id,
+            apply: (row, app) => row.Apply(app),
+            create: TrackedAppRow.From);
     }
 
     private static string Format(TimeSpan elapsed)

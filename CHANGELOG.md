@@ -5,6 +5,10 @@ All notable changes to Reentry are documented here. The format follows
 
 ## [Unreleased]
 
+- HUD: call `AppWindow.SetIcon` on the main, settings, and consent windows (the caption does not pick up `ApplicationIcon`). Replace the 195-byte PNG-in-ICO with a 16/32/48 BMP glyph derived from the existing teal mark.
+- HUD: update restore/startup rows in place — `Sync` no longer `Clear()`s bound collections on the 1 Hz tick (that emptied both lists and reset subsection scroll). Footer elapsed still ticks every second.
+- HUD: session progress bar plus “N / M settled”, compact single-line rows, and colored status chips (Interactive green, Pending/Starting amber, Failed purple, Hung orange, Disabled gray). Per-row clocks that duplicated the footer are gone.
+
 - Launch on Windows 11 25H2: use the installed WASDK 2.4 runtime instead of the self-contained CoreMessagingXP payload (0xC0000602). Give the tray icon a generated glyph so ForceCreate has an IconSource.
 
 ## [0.1.0-alpha1] - 2026-08-20
