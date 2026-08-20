@@ -3,6 +3,11 @@
     <Platform Name="x64" />
   </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/Reentry.App/Reentry.App.csproj" />
+    <Project Path="src/Reentry.Core/Reentry.Core.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="src/Reentry.App/Reentry.App.csproj">
+      <Platform Project="x64" />
+    </Project>
   </Folder>
 </Solution>
