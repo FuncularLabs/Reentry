@@ -1,8 +1,5 @@
+using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.UI.Controls;
-using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace Reentry.App.Services;
 
@@ -14,10 +11,21 @@ public sealed class EndSessionHook : IDisposable
 {
     private const uint WmQueryEndSession = 0x0011;
     private const uint WmEndSession = 0x0016;
+    private const nuint SubclassId = 1;
+
     private readonly Action _onEndSession;
-    private HWND _hwnd;
-    private SUBCLASSPROC? _proc;
+    private nint _hwnd;
+    private SubclassProc? _proc;
     private bool _attached;
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate nint SubclassProc(
+        nint hwnd,
+        uint msg,
+        nuint wParam,
+        nint lParam,
+        nuint idSubclass,
+        nuint refData);
 
     public EndSessionHook(Action onEndSession)
     {
@@ -38,12 +46,12 @@ public sealed class EndSessionHook : IDisposable
     public void Attach(nint hwnd)
     {
         Detach();
-        _hwnd = new HWND(hwnd);
+        _hwnd = hwnd;
         _proc = WndProc;
-        _attached = PInvoke.SetWindowSubclass(_hwnd, _proc, 1, 0);
+        _attached = SetWindowSubclass(_hwnd, _proc, SubclassId, 0);
     }
 
-    private LRESULT WndProc(HWND hwnd, uint msg, WPARAM wParam, LPARAM lParam, nuint id, nuint data)
+    private nint WndProc(nint hwnd, uint msg, nuint wParam, nint lParam, nuint id, nuint data)
     {
         if (msg is WmQueryEndSession or WmEndSession)
         {
@@ -51,17 +59,39 @@ public sealed class EndSessionHook : IDisposable
             catch { /* never block shutdown */ }
         }
 
-        return PInvoke.DefSubclassProc(hwnd, msg, wParam, lParam);
+        return DefSubclassProc(hwnd, msg, wParam, lParam);
     }
 
     private void Detach()
     {
         if (_attached && _proc is not null)
         {
-            PInvoke.RemoveWindowSubclass(_hwnd, _proc, 1);
+            RemoveWindowSubclass(_hwnd, _proc, SubclassId);
             _attached = false;
         }
     }
 
     public void Dispose() => Detach();
+
+    [DllImport("comctl32.dll", ExactSpelling = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowSubclass(
+        nint hWnd,
+        SubclassProc pfnSubclass,
+        nuint uIdSubclass,
+        nuint dwRefData);
+
+    [DllImport("comctl32.dll", ExactSpelling = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RemoveWindowSubclass(
+        nint hWnd,
+        SubclassProc pfnSubclass,
+        nuint uIdSubclass);
+
+    [DllImport("comctl32.dll", ExactSpelling = true)]
+    private static extern nint DefSubclassProc(
+        nint hWnd,
+        uint uMsg,
+        nuint wParam,
+        nint lParam);
 }

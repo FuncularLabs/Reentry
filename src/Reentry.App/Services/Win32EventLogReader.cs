@@ -1,6 +1,7 @@
 using System.Diagnostics.Eventing.Reader;
 using Reentry.Core.Abstractions;
 using Reentry.Core.Models;
+using EventLogRecord = Reentry.Core.Models.EventLogRecord;
 
 namespace Reentry.App.Services;
 
