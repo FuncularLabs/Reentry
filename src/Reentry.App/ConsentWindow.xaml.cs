@@ -11,6 +11,7 @@ public sealed partial class ConsentWindow : Window
         InitializeComponent();
         Title = "Reentry";
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
+        WindowIcon.Apply(this);
         Closed += (_, _) => _tcs.TrySetResult(false);
     }
 

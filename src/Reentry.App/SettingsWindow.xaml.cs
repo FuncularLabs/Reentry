@@ -12,6 +12,7 @@ public sealed partial class SettingsWindow : Window
         InitializeComponent();
         Title = "Reentry settings";
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
+        WindowIcon.Apply(this);
     }
 
     public SettingsViewModel ViewModel { get; }

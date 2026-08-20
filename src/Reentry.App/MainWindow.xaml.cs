@@ -1,4 +1,3 @@
-using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Reentry.App.ViewModels;
@@ -15,9 +14,7 @@ public sealed partial class MainWindow : Window
         Title = "Reentry";
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
 
-        var hwnd = WindowNative.GetWindowHandle(this);
-        var id = Win32Interop.GetWindowIdFromWindow(hwnd);
-        var appWindow = AppWindow.GetFromWindowId(id);
+        var appWindow = WindowIcon.Apply(this);
         appWindow.Resize(new Windows.Graphics.SizeInt32(540, 760));
         if (appWindow.Presenter is OverlappedPresenter presenter)
         {
