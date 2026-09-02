@@ -36,6 +36,7 @@ public class SettingsPathsTests
             Assert.Equal(Path.GetFullPath(tmp.Path), ReentryPaths.GetDataDirectory());
             Assert.Equal(Path.Combine(Path.GetFullPath(tmp.Path), "settings.json"), ReentryPaths.SettingsPath);
             Assert.Equal(Path.Combine(Path.GetFullPath(tmp.Path), "last-session.json"), ReentryPaths.LastSessionPath);
+            Assert.Equal(Path.Combine(Path.GetFullPath(tmp.Path), "timings.sqlite"), ReentryPaths.TimingsPath);
         }
         finally
         {

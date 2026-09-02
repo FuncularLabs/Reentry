@@ -7,8 +7,11 @@ namespace Reentry.Core.Tracking;
 
 /// <summary>
 /// Match last-session + inventory to live processes/windows.
-/// Failed = exited quickly with no window. Hung = alive, no window, past timeout.
-/// Never kills anything. Global cap (~10 min) freezes remaining Pending/Starting.
+/// Failed = exited with no window (or never appeared past the global cap).
+/// Hung = restore (ARR / Explorer) still alive with no window past timeout.
+/// Startup inventory that stays alive without a window is Interactive (tray / background).
+/// Never kills anything. Global cap (~10 min) marks leftover Pending as Failed
+/// and leftover restore Starting as Hung.
 /// </summary>
 public sealed class StartupTracker
 {
@@ -46,7 +49,6 @@ public sealed class StartupTracker
             }
 
             app.FirstExpectedUtc = obs.FirstExpectedUtc;
-            app.Elapsed = now - obs.FirstExpectedUtc;
 
             var live = processes.FirstOrDefault(p => CommandText.SameExecutable(p.Executable, app.Executable));
             var window = windows.FirstOrDefault(w => w.IsVisible && CommandText.SameExecutable(w.Executable, app.Executable));
@@ -65,6 +67,16 @@ public sealed class StartupTracker
             }
 
             app.State = Decide(app, obs, live is not null, now);
+            if (app.State.IsSettled())
+            {
+                obs.SettledUtc ??= now;
+                app.Elapsed = obs.SettledUtc.Value - obs.FirstExpectedUtc;
+            }
+            else
+            {
+                app.Elapsed = now - obs.FirstExpectedUtc;
+            }
+
             result.Add(app);
         }
 
@@ -86,6 +98,11 @@ public sealed class StartupTracker
 
         if (processAlive)
         {
+            // Tray / background startup apps (Dropbox, Everything, …) never show a
+            // normal visible HWND. Alive is Interactive. Restore rows still need a window.
+            if (!app.Source.ExpectsVisibleWindow())
+                return AppState.Interactive;
+
             if (elapsed >= hungAfter || elapsed >= cap)
                 return AppState.Hung;
             return AppState.Starting;
@@ -109,6 +126,7 @@ public sealed class StartupTracker
         public DateTimeOffset? ProcessFirstSeenUtc { get; set; }
         public DateTimeOffset? ProcessLastSeenUtc { get; set; }
         public DateTimeOffset? WindowFirstSeenUtc { get; set; }
+        public DateTimeOffset? SettledUtc { get; set; }
         public bool SawProcess { get; set; }
         public bool SawWindow { get; set; }
     }
