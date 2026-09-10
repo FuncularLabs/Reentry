@@ -5,7 +5,7 @@ All notable changes to Reentry are documented here. The format follows
 
 ## [Unreleased]
 
-- HUD / tray / Settings: **Produce Checklist…** saves a local markdown (plus sibling full-height HUD PNG) or plain-text diagnostic of the current restore and startup rows. Default filename `reentry-checklist-YYYYMMDD-HHMM.md`. No upload.
+- HUD / tray / Settings: **Produce Checklist…** saves a local markdown (plus sibling HUD PNG) or plain-text diagnostic of the current restore and startup rows. PNG prefers a full-height off-tree clone and falls back to the HUD viewport. Default filename `reentry-checklist-YYYYMMDD-HHMM.md`. No upload.
 
 - Roadmap: honest *Path to fleet later* (silent install, policy, org profile, audit log, company mode, seat hook, ADMX) while public story stays personal HUD.
 

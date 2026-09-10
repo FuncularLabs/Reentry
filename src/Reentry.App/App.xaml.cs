@@ -199,23 +199,25 @@ public partial class App : Application
                 return;
 
             RefreshHud();
+            // Freeze the 1 Hz HUD tick so the PNG clone and the markdown
+            // document read the same rows / elapsed. Restart in finally.
+            _tickTimer?.Stop();
+            if (_hud is null || _hudVm is null)
+                return;
+
             var markdown = ChecklistFormatter.IsMarkdownPath(file.Name)
                            || ChecklistFormatter.IsMarkdownPath(file.Path);
-            string? imageFileName = null;
+            var doc = ChecklistExport.FromHud(_hudVm, DateTimeOffset.Now, imageFileName: null);
             if (markdown && !string.IsNullOrWhiteSpace(file.Path))
             {
                 var pngPath = ChecklistFormatter.SiblingPngPath(file.Path);
                 if (!string.IsNullOrEmpty(pngPath)
                     && await ChecklistCapture.TrySaveAsync(_hud, _hudVm, pngPath))
                 {
-                    imageFileName = Path.GetFileName(pngPath);
+                    doc = doc with { ImageFileName = Path.GetFileName(pngPath) };
                 }
             }
 
-            if (_hudVm is null)
-                return;
-
-            var doc = ChecklistExport.FromHud(_hudVm, DateTimeOffset.Now, imageFileName);
             var body = markdown
                 ? ChecklistFormatter.ToMarkdown(doc)
                 : ChecklistFormatter.ToPlainText(doc);
@@ -228,6 +230,8 @@ public partial class App : Application
         }
         finally
         {
+            if (_tickTimer is not null && !_tickTimer.IsEnabled)
+                _tickTimer.Start();
             Interlocked.Exchange(ref _checklistBusy, 0);
         }
     }

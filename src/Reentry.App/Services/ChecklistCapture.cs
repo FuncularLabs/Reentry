@@ -15,8 +15,8 @@ namespace Reentry.App.Services;
 /// <summary>
 /// Best-effort HUD PNG. Prefers a non-virtualized off-window clone so both
 /// lists render at full height; falls back to the live HUD viewport.
-/// Row values are snapshotted at capture time so a 1 Hz HUD tick cannot
-/// mutate the visual while RenderAsync is in flight.
+/// Caller must pause HUD ticks for the capture. The off-tree clone copies
+/// row text at BuildCaptureVisual; the viewport fallback is still live-bound.
 /// </summary>
 internal static class ChecklistCapture
 {

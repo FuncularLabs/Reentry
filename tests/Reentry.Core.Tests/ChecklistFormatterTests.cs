@@ -149,8 +149,10 @@ public class ChecklistFormatterTests
         Assert.DoesNotContain("No recent planned", md);
         Assert.Contains("**Session:** Ordinary logon", md);
 
+        // Equality is the tooth: IsNullOrEmpty (instead of IsNullOrWhiteSpace)
+        // would append extra blank lines for "   " after Trim().
         var whitespace = ChecklistFormatter.ToMarkdown(Sample() with { SystemLogNote = "   " });
-        Assert.DoesNotContain("**System", whitespace);
+        Assert.Equal(md, whitespace);
     }
 
     [Fact]
@@ -233,7 +235,11 @@ public class ChecklistFormatterTests
         });
         Assert.Contains("## Session restore", md);
         Assert.Contains("## Startup apps", md);
-        Assert.Contains("(none)", md);
+        var restoreAt = md.IndexOf("## Session restore", StringComparison.Ordinal);
+        var startupAt = md.IndexOf("## Startup apps", StringComparison.Ordinal);
+        var appendixAt = md.IndexOf("## Appendix", StringComparison.Ordinal);
+        Assert.Contains("(none)", md[restoreAt..startupAt]);
+        Assert.Contains("(none)", md[startupAt..appendixAt]);
         Assert.DoesNotContain("- [", md);
     }
 
