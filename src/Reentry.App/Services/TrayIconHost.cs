@@ -1,4 +1,3 @@
-using System.Drawing;
 using H.NotifyIcon;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -12,7 +11,6 @@ public sealed class TrayIconHost : IDisposable
     private readonly Action _showSettings;
     private readonly Action _exit;
     private TaskbarIcon? _icon;
-    private Icon? _ownedIcon;
 
     public TrayIconHost(Action showHud, Action produceChecklist, Action showSettings, Action exit)
     {
@@ -24,6 +22,7 @@ public sealed class TrayIconHost : IDisposable
 
     public void Show()
     {
+        // Do not swallow create failures into a headless process — log them.
         try
         {
             var menu = new MenuFlyout();
@@ -37,55 +36,39 @@ public sealed class TrayIconHost : IDisposable
             {
                 ToolTipText = AppVersion.Moniker,
                 ContextFlyout = menu,
+                IconSource = BuildIconSource(),
             };
-
-            // Same circle-R ICO as the titlebar — GeneratedIconSource text "R"
-            // was microscopic in the overflow tray.
-            var icoPath = WindowIcon.ResolvePath();
-            if (icoPath is not null && TrySetIconFromFile(_icon, icoPath))
-            {
-                // ok
-            }
-            else
-            {
-                _icon.IconSource = new GeneratedIconSource
-                {
-                    Text = "R",
-                    BackgroundType = BackgroundType.Ellipse,
-                };
-            }
-
             _icon.ForceCreate();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine(ex);
+            Log(ex.ToString());
+            throw;
         }
     }
 
-    private bool TrySetIconFromFile(TaskbarIcon icon, string icoPath)
+    private static Microsoft.UI.Xaml.Media.ImageSource BuildIconSource()
     {
-        try
+        var icoPath = WindowIcon.ResolvePath();
+        if (icoPath is not null)
         {
-            _ownedIcon = new Icon(icoPath);
-            icon.Icon = _ownedIcon;
-            return true;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex);
+            try
+            {
+                // BitmapImage accepts .ico URIs; System.Drawing.Icon assignment on
+                // WinUI TaskbarIcon has left dogfood builds with no tray at all.
+                return new BitmapImage(new Uri(icoPath, UriKind.Absolute));
+            }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+            }
         }
 
-        try
+        return new GeneratedIconSource
         {
-            icon.IconSource = new BitmapImage(new Uri(icoPath, UriKind.Absolute));
-            return true;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex);
-            return false;
-        }
+            Text = "R",
+            BackgroundType = BackgroundType.Ellipse,
+        };
     }
 
     private static MenuFlyoutItem Item(string text, Action action)
@@ -95,9 +78,16 @@ public sealed class TrayIconHost : IDisposable
         return item;
     }
 
-    public void Dispose()
+    private static void Log(string line)
     {
-        _icon?.Dispose();
-        _ownedIcon?.Dispose();
+        try
+        {
+            var dir = Reentry.Core.ReentryPaths.GetDataDirectory();
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "tray.log"), DateTime.Now.ToString("o") + " " + line + Environment.NewLine);
+        }
+        catch { }
     }
+
+    public void Dispose() => _icon?.Dispose();
 }

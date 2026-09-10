@@ -1,3 +1,6 @@
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Reentry.App.Services;
@@ -107,8 +110,12 @@ public partial class App : Application
             RegisterAutostart();
         }
 
-        var showHud = HasFlag(argv, "/autostart") || BootKind == BootKind.Unexpected;
-        var forceSettings = HasFlag(argv, "/settings") || !showHud;
+        // Manual launch (Explorer / shortcut) always shows the HUD — that is the app
+        // surface. Prior code treated Ordinary interactive launches as Settings-only,
+        // so closing Settings left a tray-only process with no visible window.
+        // /autostart keeps showing the HUD (restore monitor at logon).
+        var showHud = true;
+        var forceSettings = HasFlag(argv, "/settings");
 
         if (showHud)
             ShowHud();
@@ -121,7 +128,8 @@ public partial class App : Application
             produceChecklist: ProduceChecklist,
             showSettings: ShowSettings,
             exit: Exit);
-        _tray.Show();
+        try { _tray.Show(); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex); }
 
         _endSession = new EndSessionHook(WriteSnapshot);
         if (_hud is not null)
@@ -130,7 +138,14 @@ public partial class App : Application
             _endSession.Attach(_settingsWindow);
 
         StartTimers();
-        _instance!.Activated += (_, _) => ShowSettings();
+        // SingleInstance watches on a background thread — marshal back to the UI queue
+        // or Activate() silently does nothing / fails and a second launch looks dead.
+        var ui = DispatcherQueue.GetForCurrentThread();
+        _instance!.Activated += (_, _) =>
+        {
+            if (ui is null || !ui.TryEnqueue(() => ShowHud()))
+                ShowHud();
+        };
     }
 
     public void ShowHud()
@@ -139,10 +154,18 @@ public partial class App : Application
         {
             _hudVm = new HudViewModel(BootKind);
             _hud = new MainWindow(_hudVm);
+            _hud.Closed += (_, _) => _hud = null;
             _endSession?.Attach(_hud);
         }
 
         RefreshHud();
+        // Activate alone can leave WinUIDesktopWin32WindowClass created but invisible
+        // (dogfood: process up, no tray, no caption). Show via AppWindow as well.
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_hud);
+        var id = Win32Interop.GetWindowIdFromWindow(hwnd);
+        var appWindow = AppWindow.GetFromWindowId(id);
+        if (!appWindow.IsVisible)
+            appWindow.Show();
         _hud.Activate();
     }
 

@@ -20,7 +20,8 @@ $args = @(
     "-p:PublishSingleFile=true",
     "-p:IncludeNativeLibrariesForSelfExtract=true",
     "-p:DebugType=none",
-    "-p:DebugSymbols=false"
+    "-p:DebugSymbols=false",
+    "-p:EnableMsixTooling=true"
 )
 
 if ($SelfContained) {
