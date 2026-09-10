@@ -1,6 +1,7 @@
 using System.Drawing;
 using H.NotifyIcon;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace Reentry.App.Services;
 
@@ -38,25 +39,20 @@ public sealed class TrayIconHost : IDisposable
                 ContextFlyout = menu,
             };
 
-            // Same circle-R ICO as the titlebar / taskbar — GeneratedIconSource
-            // "R" was microscopic in the overflow tray.
+            // Same circle-R ICO as the titlebar — GeneratedIconSource text "R"
+            // was microscopic in the overflow tray.
             var icoPath = WindowIcon.ResolvePath();
-            if (icoPath is not null)
+            if (icoPath is not null && TrySetIconFromFile(_icon, icoPath))
             {
-                try
-                {
-                    _ownedIcon = new Icon(icoPath);
-                    _icon.Icon = _ownedIcon;
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex);
-                    _icon.IconSource = new GeneratedIconSource { Text = "R" };
-                }
+                // ok
             }
             else
             {
-                _icon.IconSource = new GeneratedIconSource { Text = "R" };
+                _icon.IconSource = new GeneratedIconSource
+                {
+                    Text = "R",
+                    BackgroundType = BackgroundType.Ellipse,
+                };
             }
 
             _icon.ForceCreate();
@@ -64,6 +60,31 @@ public sealed class TrayIconHost : IDisposable
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    private bool TrySetIconFromFile(TaskbarIcon icon, string icoPath)
+    {
+        try
+        {
+            _ownedIcon = new Icon(icoPath);
+            icon.Icon = _ownedIcon;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+
+        try
+        {
+            icon.IconSource = new BitmapImage(new Uri(icoPath, UriKind.Absolute));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            return false;
         }
     }
 
