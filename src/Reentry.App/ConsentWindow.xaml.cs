@@ -9,7 +9,7 @@ public sealed partial class ConsentWindow : Window
     public ConsentWindow()
     {
         InitializeComponent();
-        Title = "Reentry";
+        Title = AppVersion.Moniker;
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
         WindowIcon.Apply(this);
         Closed += (_, _) => _tcs.TrySetResult(false);

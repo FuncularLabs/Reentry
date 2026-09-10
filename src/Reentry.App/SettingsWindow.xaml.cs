@@ -10,7 +10,7 @@ public sealed partial class SettingsWindow : Window
     {
         ViewModel = viewModel;
         InitializeComponent();
-        Title = "Reentry settings";
+        Title = AppVersion.Moniker + " settings";
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
         WindowIcon.Apply(this);
     }

@@ -11,7 +11,7 @@ public sealed partial class MainWindow : Window
     {
         ViewModel = viewModel;
         InitializeComponent();
-        Title = "Reentry";
+        Title = AppVersion.Moniker;
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
 
         var appWindow = WindowIcon.Apply(this);

@@ -1,3 +1,4 @@
+using System.Drawing;
 using H.NotifyIcon;
 using Microsoft.UI.Xaml.Controls;
 
@@ -10,6 +11,7 @@ public sealed class TrayIconHost : IDisposable
     private readonly Action _showSettings;
     private readonly Action _exit;
     private TaskbarIcon? _icon;
+    private Icon? _ownedIcon;
 
     public TrayIconHost(Action showHud, Action produceChecklist, Action showSettings, Action exit)
     {
@@ -25,17 +27,38 @@ public sealed class TrayIconHost : IDisposable
         {
             var menu = new MenuFlyout();
             menu.Items.Add(Item("Show progress", _showHud));
-            menu.Items.Add(Item("Produce Checklist…", _produceChecklist));
+            menu.Items.Add(Item("Produce Checklist\u2026", _produceChecklist));
             menu.Items.Add(Item("Settings", _showSettings));
             menu.Items.Add(new MenuFlyoutSeparator());
             menu.Items.Add(Item("Exit", _exit));
 
             _icon = new TaskbarIcon
             {
-                ToolTipText = "Reentry",
+                ToolTipText = AppVersion.Moniker,
                 ContextFlyout = menu,
-                IconSource = new GeneratedIconSource { Text = "R" },
             };
+
+            // Same circle-R ICO as the titlebar / taskbar — GeneratedIconSource
+            // "R" was microscopic in the overflow tray.
+            var icoPath = WindowIcon.ResolvePath();
+            if (icoPath is not null)
+            {
+                try
+                {
+                    _ownedIcon = new Icon(icoPath);
+                    _icon.Icon = _ownedIcon;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    _icon.IconSource = new GeneratedIconSource { Text = "R" };
+                }
+            }
+            else
+            {
+                _icon.IconSource = new GeneratedIconSource { Text = "R" };
+            }
+
             _icon.ForceCreate();
         }
         catch (Exception ex)
@@ -51,5 +74,9 @@ public sealed class TrayIconHost : IDisposable
         return item;
     }
 
-    public void Dispose() => _icon?.Dispose();
+    public void Dispose()
+    {
+        _icon?.Dispose();
+        _ownedIcon?.Dispose();
+    }
 }
