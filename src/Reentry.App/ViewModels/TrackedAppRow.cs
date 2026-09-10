@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Reentry.Core.Models;
+using Reentry.Core.Timing;
 using Windows.UI;
 
 namespace Reentry.App.ViewModels;
@@ -20,6 +21,7 @@ public sealed partial class TrackedAppRow : ObservableObject
     [ObservableProperty] private string _source = "";
     [ObservableProperty] private string _state = "";
     [ObservableProperty] private string _elapsed = "";
+    [ObservableProperty] private string _timingText = "";
     [ObservableProperty] private bool _isManaged;
     [ObservableProperty] private string _stateGlyph = "●";
     [ObservableProperty] private Brush _stateBrush = DisabledBrush;
@@ -28,19 +30,20 @@ public sealed partial class TrackedAppRow : ObservableObject
     public string Id { get; init; } = "";
     public Visibility ManagedVisibility => IsManaged ? Visibility.Visible : Visibility.Collapsed;
 
-    public static TrackedAppRow From(TrackedApp app)
+    public static TrackedAppRow From(TrackedApp app, TimingTriple? timings = null)
     {
         var row = new TrackedAppRow { Id = app.Id };
-        row.Apply(app);
+        row.Apply(app, timings);
         return row;
     }
 
-    public void Apply(TrackedApp app)
+    public void Apply(TrackedApp app, TimingTriple? timings = null)
     {
         Name = app.Name;
         Source = app.Source.ToString();
         State = app.State.ToString();
-        Elapsed = FormatElapsed(app.Elapsed);
+        Elapsed = DurationFormat.Clock(app.Elapsed);
+        TimingText = DurationFormat.Row(timings ?? new TimingTriple(null, app.Elapsed, null));
         IsManaged = app.IsManaged;
         OnPropertyChanged(nameof(ManagedVisibility));
         StateGlyph = app.State switch
@@ -65,11 +68,4 @@ public sealed partial class TrackedAppRow : ObservableObject
 
     private static SolidColorBrush Brush(byte r, byte g, byte b) =>
         new(Color.FromArgb(255, r, g, b));
-
-    private static string FormatElapsed(TimeSpan elapsed)
-    {
-        if (elapsed.TotalHours >= 1)
-            return $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-        return $"{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-    }
 }

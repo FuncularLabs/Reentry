@@ -19,6 +19,39 @@ public class TrackerTests
         IsEnabled = true,
     };
 
+    private static StartupInventoryItem Dropbox() => new()
+    {
+        Name = "Dropbox",
+        Command = "C:\\Program Files\\Dropbox\\Client\\Dropbox.exe",
+        Source = AppSource.Run,
+        ValueName = "Dropbox",
+        IsUserScope = true,
+        IsEnabled = true,
+    };
+
+    private static StartupInventoryItem Everything() => new()
+    {
+        Name = "Everything",
+        Command = "C:\\Program Files\\Everything\\Everything.exe",
+        Source = AppSource.StartupFolder,
+        ValueName = "Everything",
+        IsUserScope = true,
+        IsEnabled = true,
+    };
+
+    private static SessionSnapshot ArrOutlook() => new()
+    {
+        Processes =
+        [
+            new SnapshotProcess
+            {
+                ProcessId = 7,
+                Executable = "C:\\Program Files\\Microsoft Office\\OUTLOOK.EXE",
+                IsArrRegistered = true,
+            },
+        ],
+    };
+
     [Fact]
     public void Tick_ExpectedAppWithNoProcess_IsPending()
     {
@@ -30,13 +63,13 @@ public class TrackerTests
     }
 
     [Fact]
-    public void Tick_ProcessAliveNoWindow_IsStarting()
+    public void Tick_StartupProcessAliveNoWindow_IsInteractive()
     {
         var probe = new FakeProcessProbe();
-        probe.AddProcess(44, "C:\\Program Files\\Steam\\steam.exe");
+        probe.AddProcess(44, "C:\\Program Files\\Dropbox\\Client\\Dropbox.exe");
         var tracker = new StartupTracker();
-        var rows = tracker.Tick(T0.AddSeconds(5), probe, [Steam()], lastSession: null);
-        Assert.Equal(AppState.Starting, Assert.Single(rows).State);
+        var rows = tracker.Tick(T0.AddSeconds(5), probe, [Dropbox()], lastSession: null);
+        Assert.Equal(AppState.Interactive, Assert.Single(rows).State);
     }
 
     [Fact]
@@ -58,21 +91,36 @@ public class TrackerTests
         var probe = new FakeProcessProbe();
         probe.AddProcess(44, "steam.exe");
         var tracker = new StartupTracker();
-        Assert.Equal(AppState.Starting, Assert.Single(tracker.Tick(T0.AddSeconds(2), probe, [Steam()], null)).State);
+        Assert.Equal(AppState.Interactive, Assert.Single(tracker.Tick(T0.AddSeconds(2), probe, [Steam()], null)).State);
 
         probe.ClearLive();
         Assert.Equal(AppState.Failed, Assert.Single(tracker.Tick(T0.AddSeconds(6), probe, [Steam()], null)).State);
     }
 
     [Fact]
-    public void Tick_AliveNoWindowPastHungTimeout_IsHung()
+    public void Tick_StartupAliveNoWindowPastHungTimeout_IsInteractive_NotHung()
     {
         var probe = new FakeProcessProbe();
-        probe.AddProcess(44, "steam.exe");
+        probe.AddProcess(44, "Dropbox.exe");
         var settings = new ReentrySettings { HungNoWindowSeconds = 90, GlobalCapMinutes = 10 };
         var tracker = new StartupTracker(settings);
-        tracker.Tick(T0, probe, [Steam()], null);
-        var hung = Assert.Single(tracker.Tick(T0.AddSeconds(91), probe, [Steam()], null));
+        tracker.Tick(T0, probe, [Dropbox()], null);
+        var row = Assert.Single(tracker.Tick(T0.AddSeconds(91), probe, [Dropbox()], null));
+        Assert.Equal(AppState.Interactive, row.State);
+    }
+
+    [Fact]
+    public void Tick_RestoreAliveNoWindow_IsStarting_ThenHung()
+    {
+        var probe = new FakeProcessProbe();
+        probe.AddProcess(7, "OUTLOOK.EXE");
+        var settings = new ReentrySettings { HungNoWindowSeconds = 90, GlobalCapMinutes = 10 };
+        var tracker = new StartupTracker(settings);
+        tracker.Tick(T0, probe, [], ArrOutlook());
+        var starting = Assert.Single(tracker.Tick(T0.AddSeconds(5), probe, [], ArrOutlook()));
+        Assert.Equal(AppState.Starting, starting.State);
+
+        var hung = Assert.Single(tracker.Tick(T0.AddSeconds(91), probe, [], ArrOutlook()));
         Assert.Equal(AppState.Hung, hung.State);
         Assert.True(hung.Elapsed >= TimeSpan.FromSeconds(90));
     }
@@ -99,14 +147,52 @@ public class TrackerTests
     }
 
     [Fact]
-    public void Tick_AlivePastGlobalCapNoWindow_IsHung()
+    public void Tick_StartupAlivePastGlobalCapNoWindow_IsInteractive()
     {
         var probe = new FakeProcessProbe();
-        probe.AddProcess(44, "steam.exe");
+        probe.AddProcess(44, "Everything.exe");
         var settings = new ReentrySettings { HungNoWindowSeconds = 90, GlobalCapMinutes = 10 };
         var tracker = new StartupTracker(settings);
-        tracker.Tick(T0, probe, [Steam()], null);
-        Assert.Equal(AppState.Hung, Assert.Single(tracker.Tick(T0.AddMinutes(10), probe, [Steam()], null)).State);
+        tracker.Tick(T0, probe, [Everything()], null);
+        Assert.Equal(AppState.Interactive, Assert.Single(tracker.Tick(T0.AddMinutes(10), probe, [Everything()], null)).State);
+    }
+
+    [Fact]
+    public void Tick_RestoreAlivePastGlobalCapNoWindow_IsHung()
+    {
+        var probe = new FakeProcessProbe();
+        probe.AddProcess(7, "OUTLOOK.EXE");
+        var settings = new ReentrySettings { HungNoWindowSeconds = 90, GlobalCapMinutes = 10 };
+        var tracker = new StartupTracker(settings);
+        tracker.Tick(T0, probe, [], ArrOutlook());
+        Assert.Equal(AppState.Hung, Assert.Single(tracker.Tick(T0.AddMinutes(10), probe, [], ArrOutlook())).State);
+    }
+
+    [Fact]
+    public void Tick_RestoreVisibleWindow_IsInteractive()
+    {
+        var probe = new FakeProcessProbe();
+        probe.AddProcess(7, "OUTLOOK.EXE");
+        probe.AddWindow(7, "OUTLOOK.EXE", "Inbox");
+        var tracker = new StartupTracker();
+        Assert.Equal(AppState.Interactive, Assert.Single(tracker.Tick(T0.AddSeconds(8), probe, [], ArrOutlook())).State);
+    }
+
+    [Fact]
+    public void Tick_SettledElapsed_FreezesOnLaterTicks()
+    {
+        var probe = new FakeProcessProbe();
+        var tracker = new StartupTracker();
+        Assert.Equal(AppState.Pending, Assert.Single(tracker.Tick(T0, probe, [Dropbox()], null)).State);
+
+        probe.AddProcess(44, "Dropbox.exe");
+        var settled = Assert.Single(tracker.Tick(T0.AddSeconds(8), probe, [Dropbox()], null));
+        Assert.Equal(AppState.Interactive, settled.State);
+        Assert.Equal(TimeSpan.FromSeconds(8), settled.Elapsed);
+
+        var later = Assert.Single(tracker.Tick(T0.AddSeconds(40), probe, [Dropbox()], null));
+        Assert.Equal(AppState.Interactive, later.State);
+        Assert.Equal(TimeSpan.FromSeconds(8), later.Elapsed);
     }
 
     [Fact]

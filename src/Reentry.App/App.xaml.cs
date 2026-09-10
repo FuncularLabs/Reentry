@@ -9,6 +9,7 @@ using Reentry.Core.Managed;
 using Reentry.Core.Models;
 using Reentry.Core.Settings;
 using Reentry.Core.Snapshot;
+using Reentry.Core.Timing;
 using Reentry.Core.Tracking;
 
 namespace Reentry.App;
@@ -24,6 +25,8 @@ public partial class App : Application
     private ISessionSnapshotter? _snapshotter;
     private StartupInventory? _inventory;
     private StartupTracker? _tracker;
+    private TimingStore? _timings;
+    private SessionTimingRecorder? _recorder;
     private Win32ProcessProbe? _probe;
     private Win32Registry? _registry;
     private AutostartRegistration? _autostart;
@@ -69,6 +72,14 @@ public partial class App : Application
         _settings = new SettingsStore();
         _managed = new ManagedEntryStore();
         _snapshots = new SessionSnapshotStore();
+        try
+        {
+            _timings = new TimingStore();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
         _registry = new Win32Registry();
         _probe = new Win32ProcessProbe();
         _inventory = new StartupInventory(_registry, new Win32FileSystemProbe());
@@ -176,25 +187,47 @@ public partial class App : Application
 
     private void RefreshHud()
     {
-        if (_hudVm is null || _tracker is null || _inventory is null || _probe is null)
+        if (_tracker is null || _inventory is null || _probe is null)
             return;
 
+        var now = DateTimeOffset.UtcNow;
         var rows = _tracker.Tick(
-            DateTimeOffset.UtcNow,
+            now,
             _probe,
             _inventory.Collect(),
             _snapshots!.Read(),
             _managed!.All);
-        _hudVm.ReplaceRows(rows);
+
+        SessionTimingView? view = null;
+        try
+        {
+            if (_timings is not null)
+            {
+                if (_recorder is null)
+                {
+                    var started = _tracker.SessionStartUtc ?? now;
+                    var sessionId = _timings.BeginSession(started);
+                    _recorder = new SessionTimingRecorder(_timings, sessionId, started);
+                }
+
+                view = _recorder.Observe(rows, now);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+        }
+
+        _hudVm?.ReplaceRows(rows, view);
     }
 
     private void WriteSnapshot()
     {
         try
         {
-            if (_snapshotter is null || _snapshots is null)
-                return;
-            _snapshots.Write(_snapshotter.Capture());
+            if (_snapshotter is not null && _snapshots is not null)
+                _snapshots.Write(_snapshotter.Capture());
+            _recorder?.Flush(DateTimeOffset.UtcNow);
         }
         catch (Exception ex)
         {

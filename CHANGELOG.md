@@ -7,6 +7,10 @@ All notable changes to Reentry are documented here. The format follows
 
 - Roadmap: honest *Path to fleet later* (silent install, policy, org profile, audit log, company mode, seat hook, ADMX) while public story stays personal HUD.
 
+- HUD: last / current / average settle times on both section headers and each row, backed by `%LOCALAPPDATA%\Reentry\timings.sqlite`. Current is a stopwatch that freezes when the row or section settles (Interactive, Failed, Hung, Disabled). Last and average come from previous boots, not the in-progress session.
+- Tracker: startup inventory (Run / folder / task) that stays alive without a visible window is Interactive, not Hung. Hung is reserved for restore (ARR / Explorer) rows that we expected a window from. Fixes false Hung chips on Dropbox / Everything-class tray apps.
+- HUD: ListView scrollbars stay Visible (MouseIndicator) instead of overlay/auto-hide.
+
 - HUD: call `AppWindow.SetIcon` on the main, settings, and consent windows (the caption does not pick up `ApplicationIcon`). Replace the 195-byte PNG-in-ICO with a 16/32/48 BMP glyph derived from the existing teal mark.
 - HUD: update restore/startup rows in place â€” `Sync` no longer `Clear()`s bound collections on the 1 Hz tick (that emptied both lists and reset subsection scroll). Footer elapsed still ticks every second.
 - HUD: session progress bar plus â€œN / M settledâ€, compact single-line rows, and colored status chips (Interactive green, Pending/Starting amber, Failed purple, Hung orange, Disabled gray). Per-row clocks that duplicated the footer are gone.

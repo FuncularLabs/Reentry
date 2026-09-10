@@ -31,7 +31,8 @@ not an official Windows API.
 
 - Always-on-top HUD after `/autostart` or an unexpected shutdown.
 - Banner for boot kind: expected (User32 1074), unexpected (6008 / Kernel-Power 41), or ordinary.
-- **Session restore (inferred)** and **Startup apps** sections.
+- **Session restore (inferred)** and **Startup apps** sections, with last / current / average settle times on each section and row.
+- Tray / background startup apps (no normal HWND) count as **Interactive** once the process is up. **Hung** is for restore rows that never showed a window.
 - Settings: list inventory, enable/disable user-scope items via StartupApproved
   (the Run value is **not** deleted), add/remove a Reentry-owned user Run entry.
 - First-run consent: *Start with Windows so we can show restore progress after a reboot.*
@@ -68,18 +69,19 @@ The app is unpackaged (`WindowsPackageType=None`) and uses the installed Windows
 
 ## Data & privacy
 
-Everything is local. Settings, the last-session snapshot, and the managed-entry
-sidecar live in `%LOCALAPPDATA%\Reentry` (`settings.json`, `last-session.json`,
-`managed-entries.json`). Delete that folder to reset. Set `REENTRY_DATA_DIR` to
-relocate it. Nothing is uploaded; nothing phones home.
+Everything is local. Settings, the last-session snapshot, the managed-entry
+sidecar, and settle timings live in `%LOCALAPPDATA%\Reentry` (`settings.json`,
+`last-session.json`, `managed-entries.json`, `timings.sqlite`). Delete that
+folder to reset. Set `REENTRY_DATA_DIR` to relocate it. Nothing is uploaded;
+nothing phones home.
 
 ---
 
 ## Architecture
 
 - **`Reentry.Core`** — paths, settings, inventory, StartupApproved merge, snapshot
-  store, boot classifier, tracker state machine, managed-entry map. No UI, no Win32.
-  `net10.0`, unit-tested with fakes.
+  store, boot classifier, tracker state machine, managed-entry map, SQLite settle
+  timings. No UI, no Win32. `net10.0`, unit-tested with fakes.
 - **`Reentry.App`** — WinUI 3 unpackaged HUD, settings, tray, CsWin32 / Task
   Scheduler implementations of the Core interfaces.
 - **`Reentry.Core.Tests`** — xUnit. Not in `Reentry.slnx` (Aperture pattern);
