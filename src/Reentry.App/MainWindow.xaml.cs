@@ -12,14 +12,29 @@ public sealed partial class MainWindow : Window
         ViewModel = viewModel;
         InitializeComponent();
         Title = AppVersion.Moniker;
-        SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
 
-        var appWindow = WindowIcon.Apply(this);
-        appWindow.Resize(new Windows.Graphics.SizeInt32(540, 760));
-        if (appWindow.Presenter is OverlappedPresenter presenter)
+        try
         {
-            presenter.IsAlwaysOnTop = true;
-            presenter.IsMaximizable = false;
+            SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Write("MainWindow MicaBackdrop: " + ex);
+        }
+
+        try
+        {
+            var appWindow = WindowIcon.Apply(this);
+            appWindow.Resize(new Windows.Graphics.SizeInt32(540, 760));
+            if (appWindow.Presenter is OverlappedPresenter presenter)
+            {
+                presenter.IsAlwaysOnTop = true;
+                presenter.IsMaximizable = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Write("MainWindow AppWindow chrome: " + ex);
         }
     }
 

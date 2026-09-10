@@ -45,11 +45,18 @@ public partial class App : Application
 
     public App()
     {
+        // Required for WASDK single-file publish (Bootstrap looks here for the runtime).
+        Environment.SetEnvironmentVariable(
+            "MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY",
+            AppContext.BaseDirectory);
+
         InitializeComponent();
         UnhandledException += (_, e) =>
         {
+            StartupLog.Write("UnhandledException: " + e.Message);
+            if (e.Exception is not null)
+                StartupLog.Write(e.Exception);
             e.Handled = true;
-            System.Diagnostics.Debug.WriteLine(e.Message);
         };
     }
 
@@ -86,11 +93,16 @@ public partial class App : Application
 
         ApplicationRestart.Register("/autostart");
 
-        _ = LaunchAsync(argv);
+        _ = LaunchAsync(argv).ContinueWith(t =>
+        {
+            if (t.IsFaulted && t.Exception is not null)
+                StartupLog.Write(t.Exception.GetBaseException());
+        }, TaskScheduler.Default);
     }
 
     private async Task LaunchAsync(string[] argv)
     {
+        StartupLog.Write("LaunchAsync start argv=" + string.Join(' ', argv));
         BootKind = new BootClassifier().Classify(new Win32EventLogReader(), DateTimeOffset.UtcNow);
 
         if (!_settings!.Current.AutostartConsentGiven)
@@ -150,23 +162,31 @@ public partial class App : Application
 
     public void ShowHud()
     {
-        if (_hud is null)
+        try
         {
-            _hudVm = new HudViewModel(BootKind);
-            _hud = new MainWindow(_hudVm);
-            _hud.Closed += (_, _) => _hud = null;
-            _endSession?.Attach(_hud);
-        }
+            if (_hud is null)
+            {
+                StartupLog.Write("ShowHud: creating MainWindow");
+                _hudVm = new HudViewModel(BootKind);
+                _hud = new MainWindow(_hudVm);
+                _hud.Closed += (_, _) => _hud = null;
+                _endSession?.Attach(_hud);
+                StartupLog.Write("ShowHud: MainWindow created title=" + _hud.Title);
+            }
 
-        RefreshHud();
-        // Activate alone can leave WinUIDesktopWin32WindowClass created but invisible
-        // (dogfood: process up, no tray, no caption). Show via AppWindow as well.
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(_hud);
-        var id = Win32Interop.GetWindowIdFromWindow(hwnd);
-        var appWindow = AppWindow.GetFromWindowId(id);
-        if (!appWindow.IsVisible)
+            RefreshHud();
+            var hwnd = WindowNative.GetWindowHandle(_hud);
+            var id = Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = AppWindow.GetFromWindowId(id);
             appWindow.Show();
-        _hud.Activate();
+            _hud.Activate();
+            StartupLog.Write("ShowHud: Show+Activate done visible=" + appWindow.IsVisible);
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Write(ex);
+            throw;
+        }
     }
 
     public void ShowSettings()
