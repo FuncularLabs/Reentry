@@ -46,4 +46,7 @@ public sealed partial class MainWindow : Window
 
     private void ProduceChecklist_Click(object sender, RoutedEventArgs e)
         => (Application.Current as App)?.ProduceChecklist();
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+        => (Application.Current as App)?.ShowSettings();
 }

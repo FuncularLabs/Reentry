@@ -208,6 +208,20 @@ public partial class App : Application
         _settingsWindow.Activate();
     }
 
+    /// <summary>Close Settings (if open) and bring the HUD forward — used by Save/Cancel.</summary>
+    public void CloseSettingsAndShowHud()
+    {
+        if (_settingsWindow is not null)
+        {
+            var window = _settingsWindow;
+            _settingsWindow = null;
+            try { window.Close(); }
+            catch (Exception ex) { StartupLog.Write(ex); }
+        }
+
+        ShowHud();
+    }
+
     public void ProduceChecklist() => _ = ProduceChecklistAsync();
 
     private async Task ProduceChecklistAsync()

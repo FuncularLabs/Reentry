@@ -13,6 +13,15 @@
                 <Setter Property="Margin" Value="0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             </Style>
+            <!-- Visible (not Auto/overlay): track always reserved so list width
+                 shows how much content is clipped. -->
+            <Style x:Key="HudListView" TargetType="ListView">
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible"/>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+                <Setter Property="ScrollViewer.VerticalScrollMode" Value="Enabled"/>
+                <Setter Property="SelectionMode" Value="None"/>
+                <Setter Property="IsItemClickEnabled" Value="False"/>
+            </Style>
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -34,11 +43,18 @@
                 <TextBlock Text="{x:Bind ViewModel.BootBanner, Mode=OneWay}" FontSize="16" FontWeight="SemiBold"/>
                 <TextBlock Text="{x:Bind ViewModel.BootDetail, Mode=OneWay}" Opacity="0.75" TextWrapping="Wrap"/>
             </StackPanel>
-            <Button Grid.Column="1"
-                    Content="Produce Checklist&#x2026;"
-                    Click="ProduceChecklist_Click"
-                    VerticalAlignment="Top"
-                    Padding="10,5"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                <Button Content="Produce Checklist&#x2026;"
+                        Click="ProduceChecklist_Click"
+                        Padding="10,5"/>
+                <Button Click="Settings_Click"
+                        ToolTipService.ToolTip="Settings"
+                        Padding="10,5"
+                        MinWidth="40"
+                        AccessKey="S">
+                    <FontIcon Glyph="&#xE713;" FontSize="16" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,4,0,0">
@@ -59,10 +75,9 @@
 
         <TextBlock Grid.Row="2" Text="Session restore (inferred)" FontWeight="SemiBold" Margin="0,4,0,0"/>
         <ListView Grid.Row="3"
+                  Style="{StaticResource HudListView}"
                   ItemsSource="{x:Bind ViewModel.RestoreRows, Mode=OneWay}"
-                  ItemContainerStyle="{StaticResource HudRowItem}"
-                  SelectionMode="None"
-                  IsItemClickEnabled="False">
+                  ItemContainerStyle="{StaticResource HudRowItem}">
             <ListView.ItemContainerTransitions>
                 <TransitionCollection/>
             </ListView.ItemContainerTransitions>
@@ -91,10 +106,9 @@
 
         <TextBlock Grid.Row="4" Text="Startup apps" FontWeight="SemiBold" Margin="0,4,0,0"/>
         <ListView Grid.Row="5"
+                  Style="{StaticResource HudListView}"
                   ItemsSource="{x:Bind ViewModel.StartupRows, Mode=OneWay}"
-                  ItemContainerStyle="{StaticResource HudRowItem}"
-                  SelectionMode="None"
-                  IsItemClickEnabled="False">
+                  ItemContainerStyle="{StaticResource HudRowItem}">
             <ListView.ItemContainerTransitions>
                 <TransitionCollection/>
             </ListView.ItemContainerTransitions>
