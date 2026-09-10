@@ -3,8 +3,8 @@ using Reentry.Core.Models;
 namespace Reentry.Core;
 
 /// <summary>
-/// Fictitious apps for screenshots / Produce Checklist marketing shots.
-/// No real machine names — Contoso-style placeholders only.
+/// Mixed fictitious Contoso-style apps plus familiar Windows / everyday names
+/// for screenshots. Safe to capture — not read from the live machine.
 /// </summary>
 public static class DemoCatalog
 {
@@ -13,25 +13,33 @@ public static class DemoCatalog
         // Enough rows that both HUD sections need a vertical scrollbar.
         return
         [
-            Row("demo-arr-mail", "Northwind Mail", @"C:\Program Files\Northwind\Mail.exe", AppSource.Arr, AppState.Interactive, now, 42),
-            Row("demo-arr-hub", "Adventure Works Hub", @"C:\Program Files\AdventureWorks\Hub.exe", AppSource.Arr, AppState.Interactive, now, 38),
+            // Session restore (Arr / Explorer) — familiar desktop surface
+            Row("demo-arr-outlook", "Outlook", @"C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE", AppSource.Arr, AppState.Interactive, now, 48),
+            Row("demo-arr-teams", "Microsoft Teams", @"C:\Users\Demo\AppData\Local\Microsoft\Teams\current\Teams.exe", AppSource.Arr, AppState.Starting, now, 22),
+            Row("demo-arr-slack", "Slack", @"C:\Users\Demo\AppData\Local\slack\slack.exe", AppSource.Arr, AppState.Interactive, now, 41),
+            Row("demo-arr-chrome", "Google Chrome", @"C:\Program Files\Google\Chrome\Application\chrome.exe", AppSource.Arr, AppState.Interactive, now, 55),
+            Row("demo-exp-explorer", "File Explorer", @"C:\Windows\explorer.exe", AppSource.Explorer, AppState.Interactive, now, 60),
+            Row("demo-exp-dwm", "Desktop Window Manager", @"C:\Windows\System32\dwm.exe", AppSource.Explorer, AppState.Hung, now, 120),
+            Row("demo-exp-widgets", "Windows Widgets", @"C:\Program Files\WindowsApps\MicrosoftWindows.Client.WebExperience\WidgetBoard.exe", AppSource.Explorer, AppState.Pending, now, 9),
+            Row("demo-arr-onedrive", "OneDrive", @"C:\Users\Demo\AppData\Local\Microsoft\OneDrive\OneDrive.exe", AppSource.Arr, AppState.Interactive, now, 37),
             Row("demo-arr-clip", "Contoso Clipper", @"C:\Program Files\Contoso\Clipper.exe", AppSource.Arr, AppState.Starting, now, 12),
-            Row("demo-exp-shell", "Fabrikam Desktop Shell", @"C:\Program Files\Fabrikam\Shell.exe", AppSource.Explorer, AppState.Interactive, now, 55),
-            Row("demo-exp-widgets", "Wide World Widgets", @"C:\Program Files\WideWorld\Widgets.exe", AppSource.Explorer, AppState.Pending, now, 8),
-            Row("demo-exp-board", "Proseware Whiteboard", @"C:\Program Files\Proseware\Board.exe", AppSource.Explorer, AppState.Hung, now, 96),
 
-            Row("demo-run-sync", "Fabrikam Sync", @"C:\Program Files\Fabrikam\Sync.exe", AppSource.Run, AppState.Interactive, now, 33, managed: true),
-            Row("demo-run-notes", "Litware Notes", @"C:\Program Files\Litware\Notes.exe", AppSource.Run, AppState.Interactive, now, 28),
-            Row("demo-run-chat", "Proseware Chat", @"C:\Program Files\Proseware\Chat.exe", AppSource.Run, AppState.Starting, now, 15),
-            Row("demo-run-photos", "Tailspin Photos", @"C:\Program Files\Tailspin\Photos.exe", AppSource.Run, AppState.Failed, now, 22),
-            Row("demo-sf-dock", "Alpine Dock", @"C:\Users\Demo\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\AlpineDock.exe", AppSource.StartupFolder, AppState.Interactive, now, 40),
-            Row("demo-sf-coffee", "Fourth Coffee Tray", @"C:\Users\Demo\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\FourthCoffee.exe", AppSource.StartupFolder, AppState.Pending, now, 6),
-            Row("demo-task-backup", "Contoso Nightly Backup", @"C:\Program Files\Contoso\Backup.exe", AppSource.Task, AppState.Disabled, now, 0),
-            Row("demo-task-update", "Northwind Updater", @"C:\Program Files\Northwind\Update.exe", AppSource.Task, AppState.Interactive, now, 19),
-            Row("demo-once-welcome", "Adventure Works Welcome", @"C:\Program Files\AdventureWorks\Welcome.exe", AppSource.RunOnce, AppState.Interactive, now, 11),
+            // Startup — mix of real annoyances + a few Contoso fillers
+            Row("demo-run-outlook", "Microsoft Outlook", @"C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE", AppSource.Run, AppState.Interactive, now, 33, managed: true),
+            Row("demo-run-teams", "Teams", @"C:\Users\Demo\AppData\Local\Microsoft\Teams\Update.exe", AppSource.Run, AppState.Starting, now, 18),
+            Row("demo-run-dropbox", "Dropbox", @"C:\Program Files\Dropbox\Client\Dropbox.exe", AppSource.Run, AppState.Hung, now, 95),
+            Row("demo-run-everything", "Everything", @"C:\Program Files\Everything\Everything.exe", AppSource.Run, AppState.Interactive, now, 14),
+            Row("demo-run-rasman", "Remote Access Connection Manager", @"C:\Windows\System32\rasman.exe", AppSource.Run, AppState.Hung, now, 88),
+            Row("demo-run-search", "Windows Search", @"C:\Windows\SystemApps\Microsoft.Windows.Search\SearchApp.exe", AppSource.Run, AppState.Pending, now, 7),
+            Row("demo-sf-ctfmon", "CTF Loader", @"C:\Windows\System32\ctfmon.exe", AppSource.StartupFolder, AppState.Interactive, now, 40),
+            Row("demo-sf-security", "Windows Security notification", @"C:\Program Files\Windows Defender\MSASCuiL.exe", AppSource.StartupFolder, AppState.Interactive, now, 29),
+            Row("demo-task-update", "Windows Update Medic", @"C:\Windows\System32\WaasMedicAgent.exe", AppSource.Task, AppState.Disabled, now, 0),
+            Row("demo-task-runtime", "Runtime Broker", @"C:\Windows\System32\RuntimeBroker.exe", AppSource.Task, AppState.Interactive, now, 19),
+            Row("demo-once-setup", "Office First Run", @"C:\Program Files\Microsoft Office\root\Office16\FirstRun.exe", AppSource.RunOnce, AppState.Failed, now, 25),
             Row("demo-managed-pulse", "Reentry Pulse (demo)", @"C:\Program Files\Funcular\ReentryPulse.exe", AppSource.Managed, AppState.Interactive, now, 25, managed: true),
-            Row("demo-run-ledger", "Wide World Ledger", @"C:\Program Files\WideWorld\Ledger.exe", AppSource.Run, AppState.Hung, now, 88),
-            Row("demo-run-radar", "Fabrikam Radar", @"C:\Program Files\Fabrikam\Radar.exe", AppSource.Run, AppState.Starting, now, 9),
+            Row("demo-run-fabrikam", "Fabrikam Sync", @"C:\Program Files\Fabrikam\Sync.exe", AppSource.Run, AppState.Starting, now, 11),
+            Row("demo-run-spooler", "Print Spooler", @"C:\Windows\System32\spoolsv.exe", AppSource.Run, AppState.Hung, now, 76),
+            Row("demo-run-adobe", "Adobe Creative Cloud", @"C:\Program Files\Adobe\Adobe Creative Cloud\ACC\Creative Cloud.exe", AppSource.Run, AppState.Pending, now, 5),
         ];
     }
 

@@ -9,7 +9,7 @@
         <Grid.Resources>
             <Style x:Key="HudRowItem" TargetType="ListViewItem">
                 <Setter Property="MinHeight" Value="26"/>
-                <Setter Property="Padding" Value="6,1"/>
+                <Setter Property="Padding" Value="6,1,18,1"/>
                 <Setter Property="Margin" Value="0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             </Style>
@@ -19,6 +19,8 @@
                 <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Visible"/>
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
                 <Setter Property="ScrollViewer.VerticalScrollMode" Value="Enabled"/>
+                <!-- Leave a permanent rail so overlay/always-on scrollbars don't cover chips. -->
+                <Setter Property="Padding" Value="0,0,2,0"/>
                 <Setter Property="SelectionMode" Value="None"/>
                 <Setter Property="IsItemClickEnabled" Value="False"/>
             </Style>
