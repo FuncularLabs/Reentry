@@ -13,6 +13,7 @@ README until at least one of those items ships in a form a rollout can use.
 
 - [x] Core inventory / snapshot / boot / tracker with fakes and Linux-runnable tests.
 - [x] Unpackaged WinUI HUD + settings + autostart consent.
+- [x] **Produce Checklist…** — local markdown/text export of the live HUD (md + sibling PNG, or txt). Dogfood once before Blog 684.
 - [ ] **Daily-driver week** on a real Windows box: confirm logon race (Reentry first),
       HUD readability, Approved toggles, ENDSESSION snapshot, unexpected-boot path.
 - [ ] Icon / tray polish and a screenshot for the README.

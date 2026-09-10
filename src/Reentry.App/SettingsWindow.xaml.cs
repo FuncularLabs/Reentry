@@ -18,6 +18,9 @@ public sealed partial class SettingsWindow : Window
     public SettingsViewModel ViewModel { get; }
     public nint Handle => WindowNative.GetWindowHandle(this);
 
+    private void ProduceChecklist_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        => (Application.Current as App)?.ProduceChecklist();
+
     private void Toggle_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         if (sender is Microsoft.UI.Xaml.FrameworkElement fe && fe.Tag is InventoryRow row)

@@ -9,6 +9,7 @@
         <StackPanel Spacing="16" MaxWidth="720">
             <TextBlock Text="Reentry" FontSize="22" FontWeight="SemiBold"/>
             <TextBlock Text="Manage user-facing startup apps. Disabling writes StartupApproved and leaves the Run value in place." TextWrapping="Wrap" Opacity="0.8"/>
+            <Button Content="Produce Checklist…" Click="ProduceChecklist_Click"/>
 
             <ToggleSwitch Header="Start with Windows" IsOn="{x:Bind ViewModel.AutostartEnabled, Mode=TwoWay}"/>
 

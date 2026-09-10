@@ -26,4 +26,9 @@ public sealed partial class MainWindow : Window
     public HudViewModel ViewModel { get; }
 
     public nint Handle => WindowNative.GetWindowHandle(this);
+
+    internal FrameworkElement CaptureRoot => HudRoot;
+
+    private void ProduceChecklist_Click(object sender, RoutedEventArgs e)
+        => (Application.Current as App)?.ProduceChecklist();
 }

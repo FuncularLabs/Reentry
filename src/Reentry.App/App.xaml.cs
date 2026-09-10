@@ -1,8 +1,9 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Reentry.App.Services;
-using Reentry.Core.Abstractions;
 using Reentry.App.ViewModels;
 using Reentry.Core;
+using Reentry.Core.Abstractions;
 using Reentry.Core.Boot;
 using Reentry.Core.Inventory;
 using Reentry.Core.Managed;
@@ -10,6 +11,9 @@ using Reentry.Core.Models;
 using Reentry.Core.Settings;
 using Reentry.Core.Snapshot;
 using Reentry.Core.Tracking;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace Reentry.App;
 
@@ -34,6 +38,7 @@ public partial class App : Application
     private MainWindow? _hud;
     private SettingsWindow? _settingsWindow;
     private HudViewModel? _hudVm;
+    private int _checklistBusy;
 
     public App()
     {
@@ -113,6 +118,7 @@ public partial class App : Application
 
         _tray = new TrayIconHost(
             showHud: ShowHud,
+            produceChecklist: ProduceChecklist,
             showSettings: ShowSettings,
             exit: Exit);
         _tray.Show();
@@ -157,6 +163,95 @@ public partial class App : Application
         }
 
         _settingsWindow.Activate();
+    }
+
+    public void ProduceChecklist() => _ = ProduceChecklistAsync();
+
+    private async Task ProduceChecklistAsync()
+    {
+        if (Interlocked.CompareExchange(ref _checklistBusy, 1, 0) != 0)
+            return;
+
+        try
+        {
+            ShowHud();
+            if (_hud is null || _hudVm is null)
+                return;
+
+            var hwnd = _hud.Handle;
+            if (hwnd == 0)
+                hwnd = _settingsWindow?.Handle ?? 0;
+            if (hwnd == 0)
+                return;
+
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, hwnd);
+            picker.SuggestedFileName = ChecklistFormatter.SuggestedBaseName(DateTimeOffset.Now);
+            picker.DefaultFileExtension = ".md";
+            picker.FileTypeChoices.Add("Markdown", [".md"]);
+            picker.FileTypeChoices.Add("Plain text", [".txt"]);
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+            var file = await picker.PickSaveFileAsync();
+            if (file is null)
+                return;
+            if (_hud is null || _hudVm is null)
+                return;
+
+            RefreshHud();
+            var markdown = ChecklistFormatter.IsMarkdownPath(file.Name)
+                           || ChecklistFormatter.IsMarkdownPath(file.Path);
+            string? imageFileName = null;
+            if (markdown && !string.IsNullOrWhiteSpace(file.Path))
+            {
+                var pngPath = ChecklistFormatter.SiblingPngPath(file.Path);
+                if (!string.IsNullOrEmpty(pngPath)
+                    && await ChecklistCapture.TrySaveAsync(_hud, _hudVm, pngPath))
+                {
+                    imageFileName = Path.GetFileName(pngPath);
+                }
+            }
+
+            if (_hudVm is null)
+                return;
+
+            var doc = ChecklistExport.FromHud(_hudVm, DateTimeOffset.Now, imageFileName);
+            var body = markdown
+                ? ChecklistFormatter.ToMarkdown(doc)
+                : ChecklistFormatter.ToPlainText(doc);
+            await FileIO.WriteTextAsync(file, body);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            await ShowChecklistErrorAsync(ex);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _checklistBusy, 0);
+        }
+    }
+
+    private async Task ShowChecklistErrorAsync(Exception ex)
+    {
+        try
+        {
+            var root = _hud?.Content?.XamlRoot ?? _settingsWindow?.Content?.XamlRoot;
+            if (root is null)
+                return;
+            var dialog = new ContentDialog
+            {
+                Title = "Produce Checklist",
+                Content = "Could not save the checklist.\n\n" + ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = root,
+            };
+            await dialog.ShowAsync();
+        }
+        catch (Exception inner)
+        {
+            System.Diagnostics.Debug.WriteLine(inner);
+        }
     }
 
     private void StartTimers()

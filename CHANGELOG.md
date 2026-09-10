@@ -5,6 +5,8 @@ All notable changes to Reentry are documented here. The format follows
 
 ## [Unreleased]
 
+- HUD / tray / Settings: **Produce Checklist…** saves a local markdown (plus sibling full-height HUD PNG) or plain-text diagnostic of the current restore and startup rows. Default filename `reentry-checklist-YYYYMMDD-HHMM.md`. No upload.
+
 - Roadmap: honest *Path to fleet later* (silent install, policy, org profile, audit log, company mode, seat hook, ADMX) while public story stays personal HUD.
 
 - HUD: call `AppWindow.SetIcon` on the main, settings, and consent windows (the caption does not pick up `ApplicationIcon`). Replace the 195-byte PNG-in-ICO with a 16/32/48 BMP glyph derived from the existing teal mark.
