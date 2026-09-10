@@ -140,7 +140,7 @@ public sealed partial class InventoryRow : ObservableObject
     public Visibility ManagedVisibility => IsManaged ? Visibility.Visible : Visibility.Collapsed;
     public string Scope => Item.IsUserScope ? "User" : "Machine";
     public string EnabledLabel => Item.IsEnabled ? "On" : "Off";
-    public string Source => Item.Source.ToString();
+    public string Source => AppSourceLabels.Display(Item.Source);
 
     public void Notify()
     {

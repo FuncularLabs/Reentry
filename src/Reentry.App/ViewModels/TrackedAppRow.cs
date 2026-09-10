@@ -39,7 +39,7 @@ public sealed partial class TrackedAppRow : ObservableObject
     public void Apply(TrackedApp app)
     {
         Name = app.Name;
-        Source = app.Source.ToString();
+        Source = AppSourceLabels.Display(app.Source);
         AppState = app.State;
         State = app.State.ToString();
         Elapsed = FormatElapsed(app.Elapsed);
