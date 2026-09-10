@@ -42,6 +42,7 @@ public partial class App : Application
     private SettingsWindow? _settingsWindow;
     private HudViewModel? _hudVm;
     private int _checklistBusy;
+    private bool _demoMode;
 
     public App()
     {
@@ -128,6 +129,8 @@ public partial class App : Application
         // /autostart keeps showing the HUD (restore monitor at logon).
         var showHud = true;
         var forceSettings = HasFlag(argv, "/settings");
+        if (HasFlag(argv, "/demo"))
+            _demoMode = true;
 
         if (showHud)
             ShowHud();
@@ -139,6 +142,7 @@ public partial class App : Application
             showHud: ShowHud,
             produceChecklist: ProduceChecklist,
             showSettings: ShowSettings,
+            toggleDemo: ToggleDemoList,
             exit: Exit);
         try { _tray.Show(); }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex); }
@@ -332,7 +336,17 @@ public partial class App : Application
 
     private void RefreshHud()
     {
-        if (_hudVm is null || _tracker is null || _inventory is null || _probe is null)
+        if (_hudVm is null)
+            return;
+
+        if (_demoMode)
+        {
+            _hudVm.ApplyDemoBanner();
+            _hudVm.ReplaceRows(DemoCatalog.Create(DateTimeOffset.UtcNow));
+            return;
+        }
+
+        if (_tracker is null || _inventory is null || _probe is null)
             return;
 
         var rows = _tracker.Tick(
@@ -342,6 +356,13 @@ public partial class App : Application
             _snapshots!.Read(),
             _managed!.All);
         _hudVm.ReplaceRows(rows);
+    }
+
+    public void ToggleDemoList()
+    {
+        _demoMode = !_demoMode;
+        ShowHud();
+        RefreshHud();
     }
 
     private void WriteSnapshot()

@@ -9,26 +9,33 @@ public sealed class TrayIconHost : IDisposable
     private readonly Action _showHud;
     private readonly Action _produceChecklist;
     private readonly Action _showSettings;
+    private readonly Action _toggleDemo;
     private readonly Action _exit;
     private TaskbarIcon? _icon;
 
-    public TrayIconHost(Action showHud, Action produceChecklist, Action showSettings, Action exit)
+    public TrayIconHost(
+        Action showHud,
+        Action produceChecklist,
+        Action showSettings,
+        Action toggleDemo,
+        Action exit)
     {
         _showHud = showHud;
         _produceChecklist = produceChecklist;
         _showSettings = showSettings;
+        _toggleDemo = toggleDemo;
         _exit = exit;
     }
 
     public void Show()
     {
-        // Do not swallow create failures into a headless process — log them.
         try
         {
             var menu = new MenuFlyout();
             menu.Items.Add(Item("Show progress", _showHud));
             menu.Items.Add(Item("Produce Checklist\u2026", _produceChecklist));
             menu.Items.Add(Item("Settings", _showSettings));
+            menu.Items.Add(Item("Demo screenshot list", _toggleDemo));
             menu.Items.Add(new MenuFlyoutSeparator());
             menu.Items.Add(Item("Exit", _exit));
 
@@ -54,8 +61,6 @@ public sealed class TrayIconHost : IDisposable
         {
             try
             {
-                // BitmapImage accepts .ico URIs; System.Drawing.Icon assignment on
-                // WinUI TaskbarIcon has left dogfood builds with no tray at all.
                 return new BitmapImage(new Uri(icoPath, UriKind.Absolute));
             }
             catch (Exception ex)

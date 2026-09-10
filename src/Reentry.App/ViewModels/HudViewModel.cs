@@ -26,6 +26,12 @@ public sealed partial class HudViewModel : ObservableObject
         };
     }
 
+    public void ApplyDemoBanner()
+    {
+        BootBanner = "Demo screenshot list";
+        BootDetail = "Fictitious Contoso-style apps — safe to capture. Tray: Demo screenshot list to toggle off.";
+    }
+
     public ObservableCollection<TrackedAppRow> RestoreRows { get; } = [];
     public ObservableCollection<TrackedAppRow> StartupRows { get; } = [];
 
