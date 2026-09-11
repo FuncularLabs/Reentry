@@ -26,6 +26,7 @@ public sealed partial class TrackedAppRow : ObservableObject
     [ObservableProperty] private Brush _chipForeground = ChipOnDark;
 
     public string Id { get; init; } = "";
+    public AppState AppState { get; private set; }
     public Visibility ManagedVisibility => IsManaged ? Visibility.Visible : Visibility.Collapsed;
 
     public static TrackedAppRow From(TrackedApp app)
@@ -38,7 +39,8 @@ public sealed partial class TrackedAppRow : ObservableObject
     public void Apply(TrackedApp app)
     {
         Name = app.Name;
-        Source = app.Source.ToString();
+        Source = AppSourceLabels.Display(app.Source);
+        AppState = app.State;
         State = app.State.ToString();
         Elapsed = FormatElapsed(app.Elapsed);
         IsManaged = app.IsManaged;

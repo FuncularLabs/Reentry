@@ -18,7 +18,7 @@
          Use the installed Microsoft.WindowsAppRuntime.2 2.4.0 framework package. -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsAppSdkBootstrapInitialize>true</WindowsAppSdkBootstrapInitialize>
-    <EnableMsixTooling>false</EnableMsixTooling>
+    <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\reentry.ico</ApplicationIcon>
     <Platforms>x86;x64;ARM64</Platforms>

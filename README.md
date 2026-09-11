@@ -32,6 +32,7 @@ not an official Windows API.
 - Always-on-top HUD after `/autostart` or an unexpected shutdown.
 - Banner for boot kind: expected (User32 1074), unexpected (6008 / Kernel-Power 41), or ordinary.
 - **Session restore (inferred)** and **Startup apps** sections.
+- **Produce Checklist…** (tray, HUD, and Settings) writes a local markdown or text snapshot of the current session. Markdown also saves a sibling HUD PNG. Nothing is uploaded.
 - Settings: list inventory, enable/disable user-scope items via StartupApproved
   (the Run value is **not** deleted), add/remove a Reentry-owned user Run entry.
 - First-run consent: *Start with Windows so we can show restore progress after a reboot.*

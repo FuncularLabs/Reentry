@@ -10,7 +10,7 @@ public sealed partial class SettingsWindow : Window
     {
         ViewModel = viewModel;
         InitializeComponent();
-        Title = "Reentry settings";
+        Title = AppVersion.Moniker + " settings";
         SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
         WindowIcon.Apply(this);
     }
@@ -18,16 +18,27 @@ public sealed partial class SettingsWindow : Window
     public SettingsViewModel ViewModel { get; }
     public nint Handle => WindowNative.GetWindowHandle(this);
 
-    private void Toggle_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    private void ProduceChecklist_Click(object sender, RoutedEventArgs e)
+        => (Application.Current as App)?.ProduceChecklist();
+
+    private void Toggle_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Microsoft.UI.Xaml.FrameworkElement fe && fe.Tag is InventoryRow row)
+        if (sender is FrameworkElement fe && fe.Tag is InventoryRow row)
             ViewModel.Toggle(row);
     }
 
-    private void Remove_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    private void Remove_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Microsoft.UI.Xaml.FrameworkElement fe && fe.Tag is InventoryRow row)
+        if (sender is FrameworkElement fe && fe.Tag is InventoryRow row)
             ViewModel.RemoveManaged(row);
     }
-}
 
+    private void Save_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.SaveAutostart();
+        (Application.Current as App)?.CloseSettingsAndShowHud();
+    }
+
+    private void Cancel_Click(object sender, RoutedEventArgs e)
+        => (Application.Current as App)?.CloseSettingsAndShowHud();
+}

@@ -1,8 +1,12 @@
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Reentry.App.Services;
-using Reentry.Core.Abstractions;
 using Reentry.App.ViewModels;
 using Reentry.Core;
+using Reentry.Core.Abstractions;
 using Reentry.Core.Boot;
 using Reentry.Core.Inventory;
 using Reentry.Core.Managed;
@@ -10,6 +14,9 @@ using Reentry.Core.Models;
 using Reentry.Core.Settings;
 using Reentry.Core.Snapshot;
 using Reentry.Core.Tracking;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace Reentry.App;
 
@@ -34,14 +41,23 @@ public partial class App : Application
     private MainWindow? _hud;
     private SettingsWindow? _settingsWindow;
     private HudViewModel? _hudVm;
+    private int _checklistBusy;
+    private bool _demoMode;
 
     public App()
     {
+        // Required for WASDK single-file publish (Bootstrap looks here for the runtime).
+        Environment.SetEnvironmentVariable(
+            "MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY",
+            AppContext.BaseDirectory);
+
         InitializeComponent();
         UnhandledException += (_, e) =>
         {
+            StartupLog.Write("UnhandledException: " + e.Message);
+            if (e.Exception is not null)
+                StartupLog.Write(e.Exception);
             e.Handled = true;
-            System.Diagnostics.Debug.WriteLine(e.Message);
         };
     }
 
@@ -78,11 +94,16 @@ public partial class App : Application
 
         ApplicationRestart.Register("/autostart");
 
-        _ = LaunchAsync(argv);
+        _ = LaunchAsync(argv).ContinueWith(t =>
+        {
+            if (t.IsFaulted && t.Exception is not null)
+                StartupLog.Write(t.Exception.GetBaseException());
+        }, TaskScheduler.Default);
     }
 
     private async Task LaunchAsync(string[] argv)
     {
+        StartupLog.Write("LaunchAsync start argv=" + string.Join(' ', argv));
         BootKind = new BootClassifier().Classify(new Win32EventLogReader(), DateTimeOffset.UtcNow);
 
         if (!_settings!.Current.AutostartConsentGiven)
@@ -102,8 +123,14 @@ public partial class App : Application
             RegisterAutostart();
         }
 
-        var showHud = HasFlag(argv, "/autostart") || BootKind == BootKind.Unexpected;
-        var forceSettings = HasFlag(argv, "/settings") || !showHud;
+        // Manual launch (Explorer / shortcut) always shows the HUD — that is the app
+        // surface. Prior code treated Ordinary interactive launches as Settings-only,
+        // so closing Settings left a tray-only process with no visible window.
+        // /autostart keeps showing the HUD (restore monitor at logon).
+        var showHud = true;
+        var forceSettings = HasFlag(argv, "/settings");
+        if (HasFlag(argv, "/demo"))
+            _demoMode = true;
 
         if (showHud)
             ShowHud();
@@ -113,9 +140,12 @@ public partial class App : Application
 
         _tray = new TrayIconHost(
             showHud: ShowHud,
+            produceChecklist: ProduceChecklist,
             showSettings: ShowSettings,
+            toggleDemo: ToggleDemoList,
             exit: Exit);
-        _tray.Show();
+        try { _tray.Show(); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex); }
 
         _endSession = new EndSessionHook(WriteSnapshot);
         if (_hud is not null)
@@ -124,20 +154,43 @@ public partial class App : Application
             _endSession.Attach(_settingsWindow);
 
         StartTimers();
-        _instance!.Activated += (_, _) => ShowSettings();
+        // SingleInstance watches on a background thread — marshal back to the UI queue
+        // or Activate() silently does nothing / fails and a second launch looks dead.
+        var ui = DispatcherQueue.GetForCurrentThread();
+        _instance!.Activated += (_, _) =>
+        {
+            if (ui is null || !ui.TryEnqueue(() => ShowHud()))
+                ShowHud();
+        };
     }
 
     public void ShowHud()
     {
-        if (_hud is null)
+        try
         {
-            _hudVm = new HudViewModel(BootKind);
-            _hud = new MainWindow(_hudVm);
-            _endSession?.Attach(_hud);
-        }
+            if (_hud is null)
+            {
+                StartupLog.Write("ShowHud: creating MainWindow");
+                _hudVm = new HudViewModel(BootKind);
+                _hud = new MainWindow(_hudVm);
+                _hud.Closed += (_, _) => _hud = null;
+                _endSession?.Attach(_hud);
+                StartupLog.Write("ShowHud: MainWindow created title=" + _hud.Title);
+            }
 
-        RefreshHud();
-        _hud.Activate();
+            RefreshHud();
+            var hwnd = WindowNative.GetWindowHandle(_hud);
+            var id = Win32Interop.GetWindowIdFromWindow(hwnd);
+            var appWindow = AppWindow.GetFromWindowId(id);
+            appWindow.Show();
+            _hud.Activate();
+            StartupLog.Write("ShowHud: Show+Activate done visible=" + appWindow.IsVisible);
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Write(ex);
+            throw;
+        }
     }
 
     public void ShowSettings()
@@ -159,6 +212,113 @@ public partial class App : Application
         _settingsWindow.Activate();
     }
 
+    /// <summary>Close Settings (if open) and bring the HUD forward — used by Save/Cancel.</summary>
+    public void CloseSettingsAndShowHud()
+    {
+        if (_settingsWindow is not null)
+        {
+            var window = _settingsWindow;
+            _settingsWindow = null;
+            try { window.Close(); }
+            catch (Exception ex) { StartupLog.Write(ex); }
+        }
+
+        ShowHud();
+    }
+
+    public void ProduceChecklist() => _ = ProduceChecklistAsync();
+
+    private async Task ProduceChecklistAsync()
+    {
+        if (Interlocked.CompareExchange(ref _checklistBusy, 1, 0) != 0)
+            return;
+
+        try
+        {
+            ShowHud();
+            if (_hud is null || _hudVm is null)
+                return;
+
+            var hwnd = _hud.Handle;
+            if (hwnd == 0)
+                hwnd = _settingsWindow?.Handle ?? 0;
+            if (hwnd == 0)
+                return;
+
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, hwnd);
+            picker.SuggestedFileName = ChecklistFormatter.SuggestedBaseName(DateTimeOffset.Now);
+            picker.DefaultFileExtension = ".md";
+            picker.FileTypeChoices.Add("Markdown", [".md"]);
+            picker.FileTypeChoices.Add("Plain text", [".txt"]);
+            picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+
+            var file = await picker.PickSaveFileAsync();
+            if (file is null)
+                return;
+            if (_hud is null || _hudVm is null)
+                return;
+
+            RefreshHud();
+            // Freeze the 1 Hz HUD tick so the PNG clone and the markdown
+            // document read the same rows / elapsed. Restart in finally.
+            _tickTimer?.Stop();
+            if (_hud is null || _hudVm is null)
+                return;
+
+            var markdown = ChecklistFormatter.IsMarkdownPath(file.Name)
+                           || ChecklistFormatter.IsMarkdownPath(file.Path);
+            var doc = ChecklistExport.FromHud(_hudVm, DateTimeOffset.Now, imageFileName: null);
+            if (markdown && !string.IsNullOrWhiteSpace(file.Path))
+            {
+                var pngPath = ChecklistFormatter.SiblingPngPath(file.Path);
+                if (!string.IsNullOrEmpty(pngPath)
+                    && await ChecklistCapture.TrySaveAsync(_hud, _hudVm, pngPath))
+                {
+                    doc = doc with { ImageFileName = Path.GetFileName(pngPath) };
+                }
+            }
+
+            var body = markdown
+                ? ChecklistFormatter.ToMarkdown(doc)
+                : ChecklistFormatter.ToPlainText(doc);
+            await FileIO.WriteTextAsync(file, body);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex);
+            await ShowChecklistErrorAsync(ex);
+        }
+        finally
+        {
+            if (_tickTimer is not null && !_tickTimer.IsEnabled)
+                _tickTimer.Start();
+            Interlocked.Exchange(ref _checklistBusy, 0);
+        }
+    }
+
+    private async Task ShowChecklistErrorAsync(Exception ex)
+    {
+        try
+        {
+            var root = _hud?.Content?.XamlRoot ?? _settingsWindow?.Content?.XamlRoot;
+            if (root is null)
+                return;
+            var dialog = new ContentDialog
+            {
+                Title = "Produce Checklist",
+                Content = "Could not save the checklist.\n\n" + ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = root,
+            };
+            await dialog.ShowAsync();
+        }
+        catch (Exception inner)
+        {
+            System.Diagnostics.Debug.WriteLine(inner);
+        }
+    }
+
     private void StartTimers()
     {
         var snapshotSeconds = Math.Max(10, _settings!.Current.SnapshotIntervalSeconds);
@@ -176,7 +336,17 @@ public partial class App : Application
 
     private void RefreshHud()
     {
-        if (_hudVm is null || _tracker is null || _inventory is null || _probe is null)
+        if (_hudVm is null)
+            return;
+
+        if (_demoMode)
+        {
+            _hudVm.ApplyDemoBanner();
+            _hudVm.ReplaceRows(DemoCatalog.Create(DateTimeOffset.UtcNow));
+            return;
+        }
+
+        if (_tracker is null || _inventory is null || _probe is null)
             return;
 
         var rows = _tracker.Tick(
@@ -186,6 +356,13 @@ public partial class App : Application
             _snapshots!.Read(),
             _managed!.All);
         _hudVm.ReplaceRows(rows);
+    }
+
+    public void ToggleDemoList()
+    {
+        _demoMode = !_demoMode;
+        ShowHud();
+        RefreshHud();
     }
 
     private void WriteSnapshot()

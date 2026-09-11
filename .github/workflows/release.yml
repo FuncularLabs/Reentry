@@ -58,7 +58,7 @@ jobs:
         run: |
           dotnet publish src/Reentry.App/Reentry.App.csproj `
             -c Release -r win-x64 --self-contained false `
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableMsixTooling=true `
             -p:DebugType=none -p:DebugSymbols=false `
             -p:Version=${{ steps.tag.outputs.base }} `
             -p:InformationalVersion=${{ steps.tag.outputs.version }} `
@@ -189,7 +189,7 @@ jobs:
             ''
             '## Notes'
             ''
-            '- The download is **signed** by Funcular Labs via Azure Trusted Signing (Authenticode). If Windows SmartScreen warns on a very new release, the reputation graph builds up quickly for signed installers.'
+            '- The download is **Authenticode-signed** by Funcular Labs via Azure Trusted Signing. **SmartScreen will often still complain** on a brand-new release (reputation, not an unsigned binary). Choose More info -> Run anyway if you trust the Funcular Labs publisher.
             '- Settings and the last-session snapshot live under `%LocalAppData%\Reentry` and never leave your machine.'
             '- Windows has no public pending-restore list; the HUD infers restore work from our own last-session snapshot.'
           ) -join "`n"
