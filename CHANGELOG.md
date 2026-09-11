@@ -5,33 +5,31 @@ All notable changes to Reentry are documented here. The format follows
 
 ## [Unreleased]
 
-- HUD / tray / Settings: **Produce Checklist…** saves a local markdown (plus sibling HUD PNG) or plain-text diagnostic of the current restore and startup rows. PNG prefers a full-height off-tree clone and falls back to the HUD viewport. Default filename `reentry-checklist-YYYYMMDD-HHMM.md`. No upload.
+## [0.1.0-alpha1] - 2026-09-10
 
-- Roadmap: honest *Path to fleet later* (silent install, policy, org profile, audit log, company mode, seat hook, ADMX) while public story stays personal HUD.
-
-- HUD: call `AppWindow.SetIcon` on the main, settings, and consent windows (the caption does not pick up `ApplicationIcon`). Replace the 195-byte PNG-in-ICO with a 16/32/48 BMP glyph derived from the existing teal mark.
-- HUD: update restore/startup rows in place â€” `Sync` no longer `Clear()`s bound collections on the 1 Hz tick (that emptied both lists and reset subsection scroll). Footer elapsed still ticks every second.
-- HUD: session progress bar plus â€œN / M settledâ€, compact single-line rows, and colored status chips (Interactive green, Pending/Starting amber, Failed purple, Hung orange, Disabled gray). Per-row clocks that duplicated the footer are gone.
-
-- Launch on Windows 11 25H2: use the installed WASDK 2.4 runtime instead of the self-contained CoreMessagingXP payload (0xC0000602). Give the tray icon a generated glyph so ForceCreate has an IconSource.
-
-## [0.1.0-alpha1] - 2026-08-20
-
-First scaffold â€” a Windows startup / session-restore monitor.
+First public dogfood build of Reentry — a Windows startup / session-restore monitor.
 
 ### Added
-- **`Reentry.Core`** (`net10.0`) â€” settings and paths (`REENTRY_DATA_DIR`), startup
-  inventory (Run / RunOnce / Wow6432Node / Startup folders + StartupApproved overlay),
-  last-session snapshot store, boot classifier (User32 1074 / 6008 / Kernel-Power 41),
-  tracker state machine (Pending / Starting / Interactive / Failed / Hung / Disabled),
-  managed-entry sidecar, autostart registration contract.
-- **`Reentry.App`** â€” unpackaged WinUI 3 HUD (always-on-top), settings, first-run
-  consent, tray icon, single-instance, `RegisterApplicationRestart`, ENDSESSION snapshot.
-- **Tests** â€” xUnit fakes covering inventory+Approved merge, snapshot round-trip,
-  boot classifier, tracker, managed sort, and settings paths.
-- CI + signed release workflows mirroring Aperture (Azure Trusted Signing).
+- **HUD** — always-on-top WinUI surface: inferred last-session restore rows, startup inventory, progress bar, colored status chips, gear to Settings, tray menu.
+- **Produce Checklist…** — tray / HUD / Settings export of a local markdown (plus sibling HUD PNG) or plain-text diagnostic. Default filename `reentry-checklist-YYYYMMDD-HHMM.md`. Nothing leaves the machine.
+- **Demo screenshot list** — `/demo` or tray toggle fills Contoso-style plus familiar hung suspects (Outlook, Teams, dwm, rasman, Dropbox, …) for redaction-free captures.
+- **Start with Windows** — first-run consent, per-user logon registration, Settings Save/Cancel back to the HUD.
+- **Core** — settings under `%LocalAppData%\Reentry`, startup inventory (Run / RunOnce / Wow6432Node / Startup folders + StartupApproved), last-session snapshot, boot classifier (User32 1074 / 6008 / Kernel-Power 41), tracker state machine, managed-entry sidecar.
+- Roadmap note: personal HUD first; *Path to fleet later* (silent install, policy, audit, company mode) stays aspirational.
+
+### Changed
+- Source chip for Application Restart and Recovery reads **Last session** (not `Arr`).
+- List rows leave a right gutter so always-on Win11 scrollbars do not cover status chips.
+- Folder `publish.ps1` keeps `Reentry.pri` beside the exe (required for WinUI `ms-appx` load).
+
+### Fixed
+- Interactive launch always shows the HUD (Settings-only left a headless process).
+- Tray icon loads from `reentry.ico` / BitmapImage (System.Drawing.Icon path failed silently).
+- Single-instance second launch activates the HUD on the UI thread.
+- Caption `AppWindow.SetIcon`; in-place list sync (no 1 Hz Clear pulse).
+- WASDK 2.4 on Windows 11 25H2: use installed runtime (`WindowsAppSDKSelfContained=false`).
 
 ### Notes
-- Windows has no public pending-restore list; restore rows are inferred from our
-  own last-session snapshot. We do not parse Outlook / Chrome / Explorer session files.
-- Framework-dependent build; requires the **.NET 10 Desktop Runtime**.
+- Windows has no public pending-restore list; restore rows are inferred from our own last-session snapshot. We do not parse Outlook / Chrome / Explorer session files.
+- Framework-dependent build; requires the **.NET 10 Desktop Runtime** and **Windows App SDK 2.4**.
+- Downloads are Authenticode-signed via Azure Trusted Signing. **Windows SmartScreen may still warn** on a brand-new release until reputation accrues — use More info → Run anyway when you trust the Funcular Labs signature.
